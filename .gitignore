@@ -1,0 +1,6 @@
+.venv
+.env*
+Static
+__pycache__
+*.pyc
+*.db
