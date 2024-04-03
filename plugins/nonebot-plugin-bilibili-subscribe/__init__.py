@@ -63,6 +63,27 @@ async def BiliBiliSub(
     else:
         await BiliSub.finish(MessageSegment.text("FINISH"))
 
+BiliunSub = on_command("bilibili_unsubscribe", aliases={"unsubscribe_bilibili"}, priority=10, block=True)
+async def BiliBiliUnSub(
+        event: MessageEvent,
+        matcher: Matcher,
+        args: Message = CommandArg()
+):
+    logger.info(f"BiliBiliUnSub: {args.extract_plain_text()}")
+    if Subscription_id := args.extract_plain_text():
+        # 判断是否是纯数字
+        if not Subscription_id.isdigit():
+            await BiliunSub.finish(MessageSegment.text("请输入正确的订阅号"))
+        else:
+            Subscription_id = int(Subscription_id)
+            # 取消订阅
+            await dynamic_center.unsubscribe(event.group_id, Subscription_id)
+            await BiliunSub.finish(MessageSegment.text(f"取消订阅成功，订阅号为{Subscription_id}"))
+    else:
+        await BiliunSub.finish(MessageSegment.text("FINISH"))
+
+
+
 # 基于装饰器的方式
 @scheduler.scheduled_job("interval", minutes = 5, id="send_message",start_date=datetime.now(), args=[1])
 async def run_every_5_minutes(arg1: int):
