@@ -146,6 +146,7 @@ class DynamicCenter:
 
     async def subscribe(self, group_id, subscription_id):
         # get latest_dynamic_id from bilibili
+        latest_dynamic_id = None
         dynamic_message_list = await get_dynamic_message(subscription_id)
         if dynamic_message_list:
             latest_dynamic_id = dynamic_message_list[0]['dynamic_id']
