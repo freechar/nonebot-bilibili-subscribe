@@ -157,3 +157,19 @@ class DynamicCenter:
         self.add_subscriber(group_id, "test")
         self.add_subscription_relation(subscription_id, group_id)
         self.load_subscribe_list()
+
+    async def unsubscribe(self, group_id, subscription_id):
+        cursor = self.sqlite_proxy
+
+        # 删除 SubscriptionRelation
+        sql = "DELETE FROM SubscriptionRelations WHERE subscription_id = ? AND subscriber_id = ?"
+        cursor.execute(sql, (subscription_id, group_id))
+
+        # 删除 Subscriber
+        sql = "DELETE FROM Subscribers WHERE subscriber_id = ?"
+        cursor.execute(sql, (group_id))
+
+        # 删除没有 Subscriber 的 Subscription
+        sql = "DELETE FROM Subscriptions WHERE subscription_id NOT IN (SELECT subscription_id FROM SubscriptionRelations)"
+        cursor.execute(sql)
+        self.load_subscribe_list()
