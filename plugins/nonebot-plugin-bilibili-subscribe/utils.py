@@ -1,8 +1,6 @@
 import time
 from bilibili_api import user, sync, Credential
-import sqlite3
-import httpx
-import asyncio
+from nonebot import logger
 from .sqlite_proxy import SQLiteProxy
 import skia
 from dynrender.Core import DynRender
@@ -11,22 +9,26 @@ from dynamicadaptor.DynamicConversion import formate_message
 
 async def get_dynamic_message(user_id: int):
     credential = Credential(
-    sessdata="XXX",
-    bili_jct="XXX",
-    buvid3="XXX",
-    dedeuserid="XXX"
+        sessdata="XXX",
+        bili_jct="XXX",
+        buvid3="XXX",
+        dedeuserid="XXX"
     )
+    user_id = int(user_id)
     u = user.User(uid=user_id, credential=credential)
     offset = ''
     dynamic_list = []
-    # 收集前100
-    while dynamic_list.__len__() < 10:
+    retry_count = 0
+    while dynamic_list.__len__() < 10 and retry_count < 3:
         print(f'fetch, offset->{offset}')
         try:
             res = await u.get_dynamics_new(offset)
         except BaseException as ex:
             print(ex)
-            break
+            logger.error(f"get dynamic error {ex}")
+            retry_count += 1
+            time.sleep(5)
+            continue
         else:
             for item in res['items']:
                 dynamic = {

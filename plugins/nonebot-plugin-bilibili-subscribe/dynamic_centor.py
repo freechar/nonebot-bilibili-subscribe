@@ -1,5 +1,5 @@
 from .utils import get_dynamic_message, create_tables_from_sql_file, generatine_pic_of_dyn, get_dict_value
-import sqlite3
+import time
 from nonebot.adapters.onebot.v11 import Bot
 from base64 import b64encode
 
@@ -91,16 +91,18 @@ class DynamicCenter:
     async def update_dynamic_message(self, sender: Bot) -> None:
         for subscription_id, subscription_info in self.subscribe_list.items():
             last_dynamic_id = self.subscribe_list[subscription_id]['last_dynamic_id']
-            
+            logger.info(f"subscription_id{subscription_id}, last_dynamic_id{last_dynamic_id}")
             dynamic_message_list = await get_dynamic_message(subscription_id)
-
+            logger.info(f"dynamic_message_list len {len(dynamic_message_list)} subscription_id{subscription_id}")
             if (dynamic_message_list):
                 latest_dynamic_id = dynamic_message_list[0]['dynamic_id']
+            else:
+                continue
+            time.sleep(5)
             update_dynamic_message_list = self.get_elements_before_dynamic_id(
                 dynamic_message_list, last_dynamic_id)
             subscribers = subscription_info['subscribers']
             for subscriber in subscribers:
-                tasks = []
                 for dynamic_msg in update_dynamic_message_list:
                     # 异步函数
                     img = await generatine_pic_of_dyn(dynamic_msg['item'])
@@ -115,7 +117,7 @@ class DynamicCenter:
                             auto_escape=False
                         )
                     logger.info(f"send message successful to{subscriber['subscriber_id']}")
-                    
+            logger.info(f"subscription_id{subscription_id}, last_dynamic_id{last_dynamic_id}, latest_dynamic_id{latest_dynamic_id}")        
             if last_dynamic_id != latest_dynamic_id:
                 self.update_dynamic_last_dynamic_id(
                     subscription_id, latest_dynamic_id)
