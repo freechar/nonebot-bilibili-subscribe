@@ -70,3 +70,17 @@ async def generatine_pic_of_dyn(item):
 
     bytes_data = bytearray(data.bytes())
     return bytes_data
+
+# 多层dict get 存在返回值，不存在返回None
+def get_dict_value(data, *keys):
+    # sample
+    # data = {'a': {'b': {'c': 1}}}
+    # get_dict_value(data, 'a', 'b', 'c') => 1
+    if data is None:
+        return None
+    for key in keys:
+        if isinstance(data, dict) and key in data:
+            data = data[key]
+        else:
+            return None
+    return data

@@ -1,4 +1,4 @@
-from .utils import get_dynamic_message, create_tables_from_sql_file, generatine_pic_of_dyn
+from .utils import get_dynamic_message, create_tables_from_sql_file, generatine_pic_of_dyn, get_dict_value
 import sqlite3
 from nonebot.adapters.onebot.v11 import Bot
 from base64 import b64encode
@@ -103,9 +103,12 @@ class DynamicCenter:
                 tasks = []
                 for dynamic_msg in update_dynamic_message_list:
                     # 异步函数
-                    print(type(subscriber['subscriber_id']))
                     img = await generatine_pic_of_dyn(dynamic_msg['item'])
                     message = MessageSegment.image(f"base64://{b64encode(img).decode()}")
+
+                    if get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','badge','text') == '投稿视频':
+                        jump_url = get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','jump_url')
+                        message += MessageSegment.text(f"视频地址：{jump_url}")
                     await sender.send_group_msg(
                             group_id=subscriber['subscriber_id'], 
                             message=message,

@@ -4,3 +4,4 @@ Static
 __pycache__
 *.pyc
 *.db
+sample.json
