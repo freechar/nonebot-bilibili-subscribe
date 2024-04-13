@@ -1,3 +1,7 @@
+import asyncio
+import base64
+from uuid import uuid4
+import aiohttp
 from .utils import get_dynamic_message, create_tables_from_sql_file, generatine_pic_of_dyn, get_dict_value
 import time
 from nonebot.adapters.onebot.v11 import Bot
@@ -105,24 +109,80 @@ class DynamicCenter:
             for subscriber in subscribers:
                 for dynamic_msg in update_dynamic_message_list:
                     # 异步函数
-                    img = await generatine_pic_of_dyn(dynamic_msg['item'])
-                    message = MessageSegment.image(f"base64://{b64encode(img).decode()}")
-
-                    if get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','badge','text') == '投稿视频':
-                        jump_url = get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','jump_url')
-                        message += MessageSegment.text(f"视频地址：{jump_url}")
-                    await sender.send_group_msg(
-                            group_id=subscriber['subscriber_id'], 
-                            message=message,
-                            auto_escape=False
-                        )
+                    # img = await generatine_pic_of_dyn(dynamic_msg['item'])
+                    # message = MessageSegment.image(f"base64://{b64encode(img).decode()}")
+                    # if get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','badge','text') == '投稿视频':
+                    #     jump_url = get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','jump_url')
+                    #     message += MessageSegment.text(f"视频地址：{jump_url}")
+                    # await sender.send_group_msg(
+                    #         group_id=subscriber['subscriber_id'], 
+                    #         message=message,
+                    #         auto_escape=False
+                    #     )
+                    await self.send_dynamic_message_v1(sender, subscriber['subscriber_id'], dynamic_msg)
                     logger.info(f"send message successful to{subscriber['subscriber_id']}")
             logger.info(f"subscription_id{subscription_id}, last_dynamic_id{last_dynamic_id}, latest_dynamic_id{latest_dynamic_id}")        
             if last_dynamic_id != latest_dynamic_id:
                 self.update_dynamic_last_dynamic_id(
                     subscription_id, latest_dynamic_id)
                 self.load_subscribe_list()
+
+    async def download_pics_file(self, urls):
+        imgs = []
+        for url in urls:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url) as resp:
+                    img = await resp.read()
+                    img = base64.b64encode(img).decode()
+                    imgs.append("base64://" + img)
+        return imgs
+    
+    async def send_dynamic_message_v1(self, sender: Bot, group_id: int, dynamic_msg) -> None:
+        urls = []
+        img = await generatine_pic_of_dyn(dynamic_msg['item'])
+        message = MessageSegment.image(f"base64://{b64encode(img).decode()}")
+        if get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','badge','text') == '投稿视频':
+            jump_url = get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','jump_url')
+            message += MessageSegment.text(f"视频地址：{jump_url}")
+        if get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','opus','pics'):
+            pics = get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','opus','pics')
             
+            for pic in pics:
+                urls.append(pic['url'])
+            
+        # for url in urls:
+        #     message += MessageSegment.text(url)
+        await sender.send_group_msg(
+                group_id=group_id, 
+                message=message,
+                auto_escape=False
+            )
+        message =None
+        # 异步下载图片 并且转换为base64
+        imgs = await self.download_pics_file(urls)
+        
+        logger.info(f"imgs len {len(imgs)}")
+
+        for img in imgs:
+            try:
+                logger.info(f"img is {len(img)}")
+                message = MessageSegment.image(f"{img}")
+                await sender.send_group_msg(
+                    group_id=group_id, 
+                    message=message,
+                    auto_escape=False
+                )
+            except Exception as e:
+                logger.error(f"send img error {e}")
+                continue
+    
+    async def send_dynamic_message_v2(self, sender: Bot, group_id: int, dynamic_msg) -> None:
+        module_author = get_dict_value(dynamic_msg['item'],'modules','module_author')
+        module_dynamic = get_dict_value(dynamic_msg['item'],'modules','module_dynamic')
+
+        up_name = get_dict_value(module_author,'name')
+        title = get_dict_value(module_dynamic,'major','title')
+        type = get_dict_value(module_dynamic,'major','type')
 
     def add_subscription(self, subscription_id, subscription_name, last_dynamic_id = 0):
         cursor = self.sqlite_proxy
