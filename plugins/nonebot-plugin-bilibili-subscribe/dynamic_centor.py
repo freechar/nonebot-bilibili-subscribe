@@ -76,7 +76,7 @@ class DynamicCenter:
         updated_elements = []
         for dynamic in dynamic_message_list:
             if int(dynamic['dynamic_id']) <= int(target_dynamic_id):
-                break
+                continue
             updated_elements.append(dynamic)
         return updated_elements
 
