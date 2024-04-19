@@ -41,6 +41,8 @@ async def get_dynamic_message(user_id: int):
                 break
             offset = res['offset']
         time.sleep(5)
+    # sort by dynamic_id
+    dynamic_list.sort(key=lambda x: x['dynamic_id'], reverse=True)
     return dynamic_list
 
 def create_tables_from_sql_file(file_path, db_conn: SQLiteProxy):
