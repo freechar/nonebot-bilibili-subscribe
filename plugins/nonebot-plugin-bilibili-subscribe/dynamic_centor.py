@@ -98,13 +98,14 @@ class DynamicCenter:
             logger.info(f"subscription_id{subscription_id}, last_dynamic_id{last_dynamic_id}")
             dynamic_message_list = await get_dynamic_message(subscription_id)
             logger.info(f"dynamic_message_list len {len(dynamic_message_list)} subscription_id{subscription_id}")
-            if (dynamic_message_list):
-                latest_dynamic_id = dynamic_message_list[0]['dynamic_id']
-            else:
-                continue
             time.sleep(5)
             update_dynamic_message_list = self.get_elements_before_dynamic_id(
                 dynamic_message_list, last_dynamic_id)
+            latest_dynamic_id = last_dynamic_id
+            if (update_dynamic_message_list):
+                latest_dynamic_id = dynamic_message_list[0]['dynamic_id']
+            else:
+                continue
             subscribers = subscription_info['subscribers']
             for subscriber in subscribers:
                 for dynamic_msg in update_dynamic_message_list:
@@ -214,7 +215,10 @@ class DynamicCenter:
         latest_dynamic_id = None
         dynamic_message_list = await get_dynamic_message(subscription_id)
         if dynamic_message_list:
-            latest_dynamic_id = dynamic_message_list[0]['dynamic_id']
+            # get latest_dynamic_id from bilibili
+            for dynamic in dynamic_message_list:
+                if int(dynamic['dynamic_id']) > int(latest_dynamic_id):
+                    latest_dynamic_id = dynamic['dynamic_id']
         if latest_dynamic_id:
             self.add_subscription(subscription_id, "test", latest_dynamic_id)
         else:
