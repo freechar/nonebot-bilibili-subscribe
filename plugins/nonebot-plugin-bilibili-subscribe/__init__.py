@@ -9,16 +9,17 @@ from nonebot.exception import MatcherException
 from nonebot.matcher import Matcher
 from nonebot import require
 from .config import Config
+from .heartbeat_proxy import LocalHeartbeat
+from .push_sender import send_push_notification
 from .dynamic_centor import DynamicCenter
 from nonebot.params import Arg, CommandArg
 from nonebot.adapters import Message
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, MessageSegment, MessageEvent
 from nonebot import logger
 from datetime import datetime
-
 require("nonebot_plugin_apscheduler")
-
 from nonebot_plugin_apscheduler import scheduler
+from datetime import datetime
 
 
 __plugin_meta__ = PluginMetadata(
@@ -87,5 +88,16 @@ async def BiliBiliUnSub(
 # 基于装饰器的方式
 @scheduler.scheduled_job("interval", minutes = 5, id="send_message",start_date=datetime.now(), args=[1])
 async def run_every_5_minutes(arg1: int):
-    await dynamic_center.update_dynamic_message(nonebot.get_bot())
-    print("run_every_5_minutes")
+    if LocalHeartbeat.check_heartbeat_outdate():
+        print("heartbeat outdate")
+        message = f"""
+        # Bilibili订阅
+        ## 心跳超时
+        **上次时间 {datetime.fromtimestamp(LocalHeartbeat.get_heartbeat()).strftime('%Y-%m-%d %H:%M:%S')}**
+    """
+        send_push_notification("Bilibili订阅", message)
+        
+    else:
+        await dynamic_center.update_dynamic_message(nonebot.get_bot())
+        LocalHeartbeat.set_heartbeat_now()
+        print("run_every_5_minutes")
