@@ -64,6 +64,7 @@ async def BiliBiliSub(
         await BiliSub.finish(MessageSegment.text("FINISH"))
 
 BiliunSub = on_command("bilibili_unsubscribe", aliases={"unsubscribe_bilibili"}, priority=10, block=True)
+@BiliunSub.handle()
 async def BiliBiliUnSub(
         event: MessageEvent,
         matcher: Matcher,
