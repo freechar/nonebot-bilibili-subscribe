@@ -232,7 +232,7 @@ class DynamicCenter:
 
         # 删除 Subscriber
         sql = "DELETE FROM Subscribers WHERE subscriber_id = ?"
-        cursor.execute(sql, group_id)
+        cursor.execute(sql, (group_id,))
 
         # 删除没有 Subscriber 的 Subscription
         sql = "DELETE FROM Subscriptions WHERE subscription_id NOT IN (SELECT subscription_id FROM SubscriptionRelations)"
