@@ -49,8 +49,9 @@ async def BiliBiliSub(
     logger.info(f"BiliBiliSub: {args.extract_plain_text()}")
     if Subscription_id := args.extract_plain_text():
         if Subscription_id == "test":
-            print("test START")
+            logger.info("test START")
             await dynamic_center.update_dynamic_message(nonebot.get_bot())
+            logger.end("test END")
             return
         # 判断是否是纯数字
         if not Subscription_id.isdigit():
