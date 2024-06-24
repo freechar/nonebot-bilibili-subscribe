@@ -3,7 +3,7 @@ from bilibili_api import user, sync, Credential
 from nonebot import logger
 from .sqlite_proxy import SQLiteProxy
 import skia
-from dynrender.Core import DynRender
+from dynrender_skia.Core import DynRender
 from dynamicadaptor.DynamicConversion import formate_message
 
 
