@@ -121,7 +121,13 @@ class DynamicCenter:
                     #     )
                     await self.send_dynamic_message_v1(sender, subscriber['subscriber_id'], dynamic_msg)
                     logger.info(f"send message successful to{subscriber['subscriber_id']}")
-            logger.info(f"subscription_id{subscription_id}, last_dynamic_id{last_dynamic_id}, latest_dynamic_id{latest_dynamic_id}")        
+                    if self.subscribe_list.get(subscription_id) and  \
+                        int(self.subscribe_list[subscription_id].get('last_dynamic_id')) < int(dynamic_msg['dynamic_id']):
+                        self.subscribe_list[subscription_id]['last_dynamic_id'] = dynamic_msg['dynamic_id']
+
+                        logger.info(f"update last_dynamic_id cache from {self.subscribe_list[subscription_id]['last_dynamic_id']} "
+                                    f"to {dynamic_msg['dynamic_id']}")
+            logger.info(f"subscription_id{subscription_id}, last_dynamic_id{last_dynamic_id}, latest_dynamic_id{latest_dynamic_id}")      
             if last_dynamic_id != latest_dynamic_id:
                 self.update_dynamic_last_dynamic_id(
                     subscription_id, latest_dynamic_id)
