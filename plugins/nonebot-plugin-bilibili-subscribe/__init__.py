@@ -15,6 +15,11 @@ from nonebot.adapters import Message
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, MessageSegment, MessageEvent
 from nonebot import logger
 from datetime import datetime
+import threading
+import time
+
+# 创建一个锁
+lock = threading.Lock()
 
 require("nonebot_plugin_apscheduler")
 
@@ -51,7 +56,7 @@ async def BiliBiliSub(
         if Subscription_id == "test":
             logger.info("test START")
             await dynamic_center.update_dynamic_message(nonebot.get_bot())
-            logger.end("test END")
+            logger.info("test END")
             return
         # 判断是否是纯数字
         if not Subscription_id.isdigit():
@@ -89,5 +94,12 @@ async def BiliBiliUnSub(
 # 基于装饰器的方式
 @scheduler.scheduled_job("interval", minutes = 5, id="send_message",start_date=datetime.now(), args=[1])
 async def run_every_5_minutes(arg1: int):
-    await dynamic_center.update_dynamic_message(nonebot.get_bot())
-    print("run_every_5_minutes")
+    if lock.acquire(timeout=0.1):
+        try:
+            await dynamic_center.update_dynamic_message(nonebot.get_bot())
+            print("run_every_5_minutes")
+        finally:
+            lock.release()
+    else:
+        print(f"Failed to acquire lock in {threading.current_thread().name}")
+
