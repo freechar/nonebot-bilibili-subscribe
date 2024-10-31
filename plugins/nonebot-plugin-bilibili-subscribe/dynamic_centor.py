@@ -20,6 +20,7 @@ class DynamicCenter:
         self.sqlite_proxy = SQLiteProxy(self.sqlite_path)
         self.subscribe_list = {}
         self.init_sql_table()
+        self.is_first_send = True
     def init_sql_table(self):
         base_url = os.path.dirname(os.path.abspath(__file__))
         sqlite_conn = self.sqlite_proxy
@@ -93,6 +94,9 @@ class DynamicCenter:
         
 
     async def update_dynamic_message(self, sender: Bot) -> None:
+        if self.is_first_send:
+            need_send = False
+            self.is_first_send = False
         for subscription_id, subscription_info in self.subscribe_list.items():
             last_dynamic_id = self.subscribe_list[subscription_id]['last_dynamic_id']
             logger.info(f"subscription_id{subscription_id}, last_dynamic_id{last_dynamic_id}")
@@ -119,8 +123,9 @@ class DynamicCenter:
                     #         message=message,
                     #         auto_escape=False
                     #     )
-                    await self.send_dynamic_message_v1(sender, subscriber['subscriber_id'], dynamic_msg)
-                    logger.info(f"send message successful to{subscriber['subscriber_id']}")
+                    if need_send:
+                        await self.send_dynamic_message_v1(sender, subscriber['subscriber_id'], dynamic_msg)
+                        logger.info(f"send message successful to{subscriber['subscriber_id']}")
                     # if self.subscribe_list.get(subscription_id) and  \
                     #     int(self.subscribe_list[subscription_id].get('last_dynamic_id')) < int(dynamic_msg['dynamic_id']):
                     #     self.subscribe_list[subscription_id]['last_dynamic_id'] = dynamic_msg['dynamic_id']
