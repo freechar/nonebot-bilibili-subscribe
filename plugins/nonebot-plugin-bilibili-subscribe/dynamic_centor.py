@@ -94,6 +94,7 @@ class DynamicCenter:
         
 
     async def update_dynamic_message(self, sender: Bot) -> None:
+        need_send = True
         if self.is_first_send:
             need_send = False
             self.is_first_send = False
