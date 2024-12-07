@@ -126,7 +126,7 @@ class DynamicCenter:
                     #     )
                     if need_send:
                         await self.send_dynamic_message_v1(sender, subscriber['subscriber_id'], dynamic_msg)
-                        logger.info(f"send message successful to{subscriber['subscriber_id']}")
+                        logger.info(f"send message to{subscriber['subscriber_id']}")
                     # if self.subscribe_list.get(subscription_id) and  \
                     #     int(self.subscribe_list[subscription_id].get('last_dynamic_id')) < int(dynamic_msg['dynamic_id']):
                     #     self.subscribe_list[subscription_id]['last_dynamic_id'] = dynamic_msg['dynamic_id']
@@ -164,11 +164,16 @@ class DynamicCenter:
             
         # for url in urls:
         #     message += MessageSegment.text(url)
-        await sender.send_group_msg(
-                group_id=group_id, 
-                message=message,
-                auto_escape=False
-            )
+        try:
+            await self.send_group_msg_with_retry(
+                    sender=sender,
+                    group_id=group_id, 
+                    message=message,
+                    auto_escape=False
+                )
+        except Exception as e:
+            logger.error(f"send dynamic error {e}")
+            return
         message =None
         # 异步下载图片 并且转换为base64
         imgs = await self.download_pics_file(urls)
@@ -246,3 +251,25 @@ class DynamicCenter:
         sql = "DELETE FROM Subscriptions WHERE subscription_id NOT IN (SELECT subscription_id FROM SubscriptionRelations)"
         cursor.execute(sql)
         self.load_subscribe_list()
+
+    async def send_group_msg_with_retry(sender, group_id, message, max_retries=3):
+        retries = 0
+        while retries < max_retries:
+            try:
+                await sender.send_group_msg(
+                    group_id=group_id, 
+                    message=message,
+                    auto_escape=False
+                )
+                return  # 成功发送消息后，退出循环
+            except Exception as e:
+                retries += 1
+                logger.error(f"Attempt {retries} failed: send text error {e}")
+                if retries < max_retries:
+                    await asyncio.sleep(1)  # 等待1秒后重试
+                else:
+                    logger.error("Max retries reached. Message sending failed.")
+                    raise  # 抛出异常，通知调用者发送失败
+
+# 示例调用
+# await send_group_msg_with_retry(sender, group_id, message)
