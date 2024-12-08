@@ -153,7 +153,7 @@ class DynamicCenter:
         urls = []
         img = await generatine_pic_of_dyn(dynamic_msg['item'])
         # message = MessageSegment.image(f"base64://{b64encode(img).decode()}")
-        base64_image_string = f"base64://{b64encode(img).decode()}"
+        base64_image_string = f"{b64encode(img).decode()}"
         image_data = base64.b64decode(base64_image_string)
         with open("output_image.png", "wb") as file:
             file.write(image_data)
