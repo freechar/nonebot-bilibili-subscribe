@@ -152,7 +152,11 @@ class DynamicCenter:
     async def send_dynamic_message_v1(self, sender: Bot, group_id: int, dynamic_msg) -> None:
         urls = []
         img = await generatine_pic_of_dyn(dynamic_msg['item'])
-        message = MessageSegment.image(f"base64://{b64encode(img).decode()}")
+        # message = MessageSegment.image(f"base64://{b64encode(img).decode()}")
+        image_data = f"base64://{b64encode(img).decode()}"
+        with open("output_image.png", "wb") as file:
+            file.write(image_data)
+        message = MessageSegment.image("output_image.png")
         if get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','badge','text') == '投稿视频':
             jump_url = get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','jump_url')
             message += MessageSegment.text(f"视频地址：{jump_url}")
@@ -252,7 +256,7 @@ class DynamicCenter:
         cursor.execute(sql)
         self.load_subscribe_list()
 
-    async def send_group_msg_with_retry(self, sender, group_id, message, auto_escape, max_retries=3):
+    async def send_group_msg_with_retry(self, sender: Bot, group_id, message, auto_escape, max_retries=3):
         retries = 0
         while retries < max_retries:
             try:
