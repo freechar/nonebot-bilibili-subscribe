@@ -270,3 +270,13 @@ class DynamicCenter:
                 else:
                     logger.error("Max retries reached. Message sending failed.")
                     raise  # 抛出异常，通知调用者发送失败
+
+    async def send_test_msg(self, sender):
+        id = '35040323'
+        import pdb
+        pdb.set_trace()
+        dynamic_message_list = await get_dynamic_message(id)
+        item = dynamic_message_list[0]
+        await self.send_dynamic_message_v1(sender, 985193706, item)
+
+
