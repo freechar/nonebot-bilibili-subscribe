@@ -252,7 +252,7 @@ class DynamicCenter:
         cursor.execute(sql)
         self.load_subscribe_list()
 
-    async def send_group_msg_with_retry(sender, group_id, message, max_retries=3):
+    async def send_group_msg_with_retry(self, sender, group_id, message, max_retries=3):
         retries = 0
         while retries < max_retries:
             try:
@@ -270,6 +270,3 @@ class DynamicCenter:
                 else:
                     logger.error("Max retries reached. Message sending failed.")
                     raise  # 抛出异常，通知调用者发送失败
-
-# 示例调用
-# await send_group_msg_with_retry(sender, group_id, message)
