@@ -252,14 +252,14 @@ class DynamicCenter:
         cursor.execute(sql)
         self.load_subscribe_list()
 
-    async def send_group_msg_with_retry(self, sender, group_id, message, max_retries=3):
+    async def send_group_msg_with_retry(self, sender, group_id, message, auto_escape, max_retries=3):
         retries = 0
         while retries < max_retries:
             try:
                 await sender.send_group_msg(
                     group_id=group_id, 
                     message=message,
-                    auto_escape=False
+                    auto_escape=auto_escape
                 )
                 return  # 成功发送消息后，退出循环
             except Exception as e:
