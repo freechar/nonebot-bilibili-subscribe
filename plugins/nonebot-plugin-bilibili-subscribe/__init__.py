@@ -55,7 +55,7 @@ async def BiliBiliSub(
     if Subscription_id := args.extract_plain_text():
         if Subscription_id == "test":
             logger.info("test START")
-            await dynamic_center.update_dynamic_message(nonebot.get_bot())
+            await dynamic_center.send_test_msg(nonebot.get_bot())
             logger.info("test END")
             return
         # 判断是否是纯数字

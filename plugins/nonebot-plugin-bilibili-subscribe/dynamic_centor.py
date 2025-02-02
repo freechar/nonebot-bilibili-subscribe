@@ -20,6 +20,7 @@ class DynamicCenter:
         self.sqlite_proxy = SQLiteProxy(self.sqlite_path)
         self.subscribe_list = {}
         self.init_sql_table()
+        self.is_first_send = True
     def init_sql_table(self):
         base_url = os.path.dirname(os.path.abspath(__file__))
         sqlite_conn = self.sqlite_proxy
@@ -93,6 +94,10 @@ class DynamicCenter:
         
 
     async def update_dynamic_message(self, sender: Bot) -> None:
+        need_send = True
+        if self.is_first_send:
+            need_send = False
+            self.is_first_send = False
         for subscription_id, subscription_info in self.subscribe_list.items():
             last_dynamic_id = self.subscribe_list[subscription_id]['last_dynamic_id']
             logger.info(f"subscription_id{subscription_id}, last_dynamic_id{last_dynamic_id}")
@@ -119,8 +124,9 @@ class DynamicCenter:
                     #         message=message,
                     #         auto_escape=False
                     #     )
-                    await self.send_dynamic_message_v1(sender, subscriber['subscriber_id'], dynamic_msg)
-                    logger.info(f"send message successful to{subscriber['subscriber_id']}")
+                    if need_send:
+                        await self.send_dynamic_message_v1(sender, subscriber['subscriber_id'], dynamic_msg)
+                        logger.info(f"send message to{subscriber['subscriber_id']}")
                     # if self.subscribe_list.get(subscription_id) and  \
                     #     int(self.subscribe_list[subscription_id].get('last_dynamic_id')) < int(dynamic_msg['dynamic_id']):
                     #     self.subscribe_list[subscription_id]['last_dynamic_id'] = dynamic_msg['dynamic_id']
@@ -146,7 +152,12 @@ class DynamicCenter:
     async def send_dynamic_message_v1(self, sender: Bot, group_id: int, dynamic_msg) -> None:
         urls = []
         img = await generatine_pic_of_dyn(dynamic_msg['item'])
-        message = MessageSegment.image(f"base64://{b64encode(img).decode()}")
+        # message = MessageSegment.image(f"base64://{b64encode(img).decode()}")
+        base64_image_string = f"{b64encode(img).decode()}"
+        image_data = base64.b64decode(base64_image_string)
+        with open("output_image.png", "wb") as file:
+            file.write(image_data)
+        message = MessageSegment.image("output_image.png")
         if get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','badge','text') == '投稿视频':
             jump_url = get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','jump_url')
             message += MessageSegment.text(f"视频地址：{jump_url}")
@@ -158,11 +169,16 @@ class DynamicCenter:
             
         # for url in urls:
         #     message += MessageSegment.text(url)
-        await sender.send_group_msg(
-                group_id=group_id, 
-                message=message,
-                auto_escape=False
-            )
+        try:
+            await self.send_group_msg_with_retry(
+                    sender=sender,
+                    group_id=group_id, 
+                    message=message,
+                    auto_escape=False
+                )
+        except Exception as e:
+            logger.error(f"send dynamic error {e}")
+            return
         message =None
         # 异步下载图片 并且转换为base64
         imgs = await self.download_pics_file(urls)
@@ -240,3 +256,32 @@ class DynamicCenter:
         sql = "DELETE FROM Subscriptions WHERE subscription_id NOT IN (SELECT subscription_id FROM SubscriptionRelations)"
         cursor.execute(sql)
         self.load_subscribe_list()
+
+    async def send_group_msg_with_retry(self, sender: Bot, group_id, message, auto_escape, max_retries=3):
+        retries = 0
+        while retries < max_retries:
+            try:
+                await sender.send_group_msg(
+                    group_id=group_id, 
+                    message=message,
+                    auto_escape=auto_escape
+                )
+                return  # 成功发送消息后，退出循环
+            except Exception as e:
+                retries += 1
+                logger.error(f"Attempt {retries} failed: send text error {e}")
+                if retries < max_retries:
+                    await asyncio.sleep(1)  # 等待1秒后重试
+                else:
+                    logger.error("Max retries reached. Message sending failed.")
+                    raise  # 抛出异常，通知调用者发送失败
+
+    async def send_test_msg(self, sender):
+        id = '35040323'
+        import pdb
+        pdb.set_trace()
+        dynamic_message_list = await get_dynamic_message(id)
+        item = dynamic_message_list[0]
+        await self.send_dynamic_message_v1(sender, 985193706, item)
+
+
