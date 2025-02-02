@@ -13,5 +13,9 @@ nonebot.load_builtin_plugins('echo')
 
 nonebot.load_from_toml("pyproject.toml")
 
+config = nonebot.get_driver().config
+
+config.port = 11488
+
 if __name__ == "__main__":
     nonebot.run()
