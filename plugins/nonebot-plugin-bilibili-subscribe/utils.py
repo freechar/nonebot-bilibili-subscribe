@@ -3,7 +3,7 @@ from bilibili_api import user, sync, Credential
 from nonebot import logger
 from .sqlite_proxy import SQLiteProxy
 import skia
-from dynrender.Core import DynRender
+from dynrender_skia.Core import DynRender
 from dynamicadaptor.DynamicConversion import formate_message
 
 
@@ -25,7 +25,7 @@ async def get_dynamic_message(user_id: int):
             res = await u.get_dynamics_new(offset)
         except BaseException as ex:
             print(ex)
-            logger.error(f"get dynamic error {ex}")
+            logger.error(f"get dynamic error {ex} userid:{user_id} dynamic_list length:{len(dynamic_list)} retry_count:{retry_count}")
             retry_count += 1
             time.sleep(5)
             continue

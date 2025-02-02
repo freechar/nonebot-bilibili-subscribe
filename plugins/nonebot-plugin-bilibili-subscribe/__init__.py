@@ -17,6 +17,12 @@ from nonebot.adapters import Message
 from nonebot.adapters.onebot.v11 import GroupMessageEvent, MessageSegment, MessageEvent
 from nonebot import logger
 from datetime import datetime
+import threading
+import time
+
+# 创建一个锁
+lock = threading.Lock()
+
 require("nonebot_plugin_apscheduler")
 from nonebot_plugin_apscheduler import scheduler
 from datetime import datetime
@@ -50,8 +56,9 @@ async def BiliBiliSub(
     logger.info(f"BiliBiliSub: {args.extract_plain_text()}")
     if Subscription_id := args.extract_plain_text():
         if Subscription_id == "test":
-            print("test START")
-            await dynamic_center.update_dynamic_message(nonebot.get_bot())
+            logger.info("test START")
+            await dynamic_center.send_test_msg(nonebot.get_bot())
+            logger.info("test END")
             return
         # 判断是否是纯数字
         if not Subscription_id.isdigit():
@@ -65,6 +72,7 @@ async def BiliBiliSub(
         await BiliSub.finish(MessageSegment.text("FINISH"))
 
 BiliunSub = on_command("bilibili_unsubscribe", aliases={"unsubscribe_bilibili"}, priority=10, block=True)
+@BiliunSub.handle()
 async def BiliBiliUnSub(
         event: MessageEvent,
         matcher: Matcher,
@@ -88,16 +96,23 @@ async def BiliBiliUnSub(
 # 基于装饰器的方式
 @scheduler.scheduled_job("interval", minutes = 5, id="send_message",start_date=datetime.now(), args=[1])
 async def run_every_5_minutes(arg1: int):
-    if LocalHeartbeat.check_heartbeat_outdate():
-        print("heartbeat outdate")
-        message = f"""
-        # Bilibili订阅
-        ## 心跳超时
-        **上次时间 {datetime.fromtimestamp(LocalHeartbeat.get_heartbeat()).strftime('%Y-%m-%d %H:%M:%S')}**
-    """
-        send_push_notification("Bilibili订阅", message)
-        
+    if lock.acquire(timeout=0.1):
+        try:
+            if LocalHeartbeat.check_heartbeat_outdate():
+                print("heartbeat outdate")
+                message = f"""
+                # Bilibili订阅
+                ## 心跳超时
+                **上次时间 {datetime.fromtimestamp(LocalHeartbeat.get_heartbeat()).strftime('%Y-%m-%d %H:%M:%S')}**
+            """
+                send_push_notification("Bilibili订阅", message)
+                
+            else:
+                await dynamic_center.update_dynamic_message(nonebot.get_bot())
+                LocalHeartbeat.set_heartbeat_now()
+                print("run_every_5_minutes")
+        finally:
+            lock.release()
     else:
-        await dynamic_center.update_dynamic_message(nonebot.get_bot())
-        LocalHeartbeat.set_heartbeat_now()
-        print("run_every_5_minutes")
+        print(f"Failed to acquire lock in {threading.current_thread().name}")
+
