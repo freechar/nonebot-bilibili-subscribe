@@ -152,12 +152,12 @@ class DynamicCenter:
     async def send_dynamic_message_v1(self, sender: Bot, group_id: int, dynamic_msg) -> None:
         urls = []
         img = await generatine_pic_of_dyn(dynamic_msg['item'])
-        # message = MessageSegment.image(f"base64://{b64encode(img).decode()}")
-        base64_image_string = f"{b64encode(img).decode()}"
-        image_data = base64.b64decode(base64_image_string)
-        with open("output_image.png", "wb") as file:
-            file.write(image_data)
-        message = MessageSegment.image("output_image.png")
+        message = MessageSegment.image(f"base64://{b64encode(img).decode()}")
+        #base64_image_string = f"{b64encode(img).decode()}"
+        #image_data = base64.b64decode(base64_image_string)
+        #with open("output_image.png", "wb") as file:
+         #   file.write(image_data)
+        #message = MessageSegment.image("output_image.png")
         if get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','badge','text') == '投稿视频':
             jump_url = get_dict_value(dynamic_msg['item'],'modules','module_dynamic','major','archive','jump_url')
             message += MessageSegment.text(f"视频地址：{jump_url}")
